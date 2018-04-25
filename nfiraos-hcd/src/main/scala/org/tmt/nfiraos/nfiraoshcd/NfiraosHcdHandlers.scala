@@ -6,7 +6,9 @@ import akka.stream.{ActorMaterializer, Materializer}
 import csw.framework.scaladsl.{ComponentHandlers, CurrentStatePublisher}
 import csw.messages.commands._
 import csw.messages.framework.ComponentInfo
-import csw.messages.location.TrackingEvent
+import csw.messages.location.ComponentType.Service
+import csw.messages.location.Connection.HttpConnection
+import csw.messages.location._
 import csw.messages.params.generics.{Key, KeyType, Parameter}
 import csw.messages.scaladsl.TopLevelActorMessage
 import csw.services.command.scaladsl.CommandResponseManager
@@ -37,6 +39,7 @@ class NfiraosHcdHandlers(
 
   implicit val ec: ExecutionContextExecutor = ctx.executionContext
   implicit val mat: Materializer            = ActorMaterializer()(ctx.system.toUntyped)
+
   private val log                           = loggerFactory.getLogger
   private val workerActor                   = new Worker(ctx, loggerFactory, commandResponseManager)
   private var hcdConfig: String             = _
@@ -44,6 +47,9 @@ class NfiraosHcdHandlers(
   //initialize
   override def initialize(): Future[Unit] = Future {
     log.info("---------------> Initializing ...")
+    //track configuration service
+    //trackConnection(HttpConnection(ComponentId("ConfigServer", Service)))
+
     //    import java.nio.file.Paths
     //    import csw.services.config.client.scaladsl.ConfigClientFactory
     //    val configClientService = ConfigClientFactory.clientApi(ctx.system.toUntyped, locationService)
@@ -58,6 +64,11 @@ class NfiraosHcdHandlers(
 
   override def onLocationTrackingEvent(trackingEvent: TrackingEvent): Unit = {
     log.info(s"---------------> TrackingEvent received: ${trackingEvent.connection.name}")
+
+    trackingEvent match {
+      case LocationUpdated(location) ⇒ // Do something on location update
+      case LocationRemoved(connection) ⇒ // Do something on location removed
+    }
   }
 
   override def onShutdown(): Future[Unit] = Future {
