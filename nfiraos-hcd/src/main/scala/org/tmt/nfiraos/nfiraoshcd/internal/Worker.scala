@@ -19,10 +19,7 @@ class Worker(
     Behaviors.immutable[WorkerCommand]((_, msg) => {
       msg match {
         case sleep: Sleep =>
-          log.info(s"[HCD] WorkerActor received sleep command with time of ${sleep.timeInMillis} ms")
-          println(s"[HCD] WorkerActor received sleep command with time of ${sleep.timeInMillis} ms")
-          println()
-
+          log.info(s"---------------> WorkerActor received sleep command with time of ${sleep.timeInMillis} ms")
           // simulate long running command
           Thread.sleep(sleep.timeInMillis)
           commandResponseManager.addOrUpdateCommand(sleep.runId, CommandResponse.Completed(sleep.runId))

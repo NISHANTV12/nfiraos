@@ -27,7 +27,7 @@ class Worker(ctx: ActorContext[TopLevelActorMessage], loggerFactory: LoggerFacto
       Behaviors.immutable[WorkerCommand]((_, msg) => {
         msg match {
           case command: CommandForHcd =>
-            log.info(s"[Assembly] WorkerActor received sleep command")
+            log.info(s"WorkerActor received sleep command")
             handleCommand(command.hcd)
           case _ => log.error("Unsupported message type")
         }
@@ -42,17 +42,17 @@ class Worker(ctx: ActorContext[TopLevelActorMessage], loggerFactory: LoggerFacto
 
     // Construct Setup command
     val sleepTimeKey: Key[Long]         = KeyType.LongKey.make("SleepTime")
-    val sleepTimeParam: Parameter[Long] = sleepTimeKey.set(5000).withUnits(Units.millisecond)
+    val sleepTimeParam: Parameter[Long] = sleepTimeKey.set(30000).withUnits(Units.millisecond)
     val setupCommand                    = Setup(componentInfo.prefix, CommandName("sleep"), Some(ObsId("2018A-001"))).add(sleepTimeParam)
 
     // Submit command, and handle validation response.  Final response is returned as a Future
+    log.info(s"---------------> Sending ${setupCommand.commandName} command to HCD")
     val submitCommandResponseF: Future[CommandResponse] = hcd.submit(setupCommand).flatMap {
       case _: Accepted =>
         // If valid, subscribe to the HCD's CommandResponseManager
         // This explicit timeout indicates how long to wait for completion
-        log.info(s"[Assembly] Sending ${setupCommand.commandName} command to HCD")
-        println(s"[Assembly] Sending ${setupCommand.commandName} command to HCD")
-        hcd.subscribe(setupCommand.runId)(10000.seconds)
+        log.info(s"---------------> Received successful validation response from HCD. Subscribing for final result")
+        hcd.subscribe(setupCommand.runId)(40000.seconds)
       case x =>
         log.error("Sleep command invalid")
         Future(x)
@@ -61,8 +61,7 @@ class Worker(ctx: ActorContext[TopLevelActorMessage], loggerFactory: LoggerFacto
     // Wait for final response, and log result
     submitCommandResponseF.foreach {
       case _: CommandResponse.Completed =>
-        log.info("[Assembly] Command sent to HCD was completed successfully")
-        println("[Assembly] Command sent to HCD was completed successfully")
+        log.info("---------------> Command sent to HCD was completed successfully")
       case x: CommandResponse.Error => log.error(s"Command Completed with error: ${x.message}")
       case _                        => log.error("Command failed")
     }

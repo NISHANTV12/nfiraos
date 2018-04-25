@@ -37,24 +37,21 @@ class NfiraosAssemblyHandlers(
 
   //initialize
   override def initialize(): Future[Unit] = Future {
-    log.info("[Assembly] Initializing ...")
-    println("[Assembly] Initializing ...")
+    log.info("---------------> Initializing ...")
   }
 
   override def onShutdown(): Future[Unit] = Future {
-    log.info("[Assembly] Shutting down...")
-    println("[Assembly] Shutting down...")
+    log.info("---------------> Shutting down...")
   }
 
   //track-location
   override def onLocationTrackingEvent(trackingEvent: TrackingEvent): Unit = {
-    log.info(s"[Assembly] Received tracking event : ${trackingEvent.connection.name}")
-    println(s"[Assembly] Received tracking event : ${trackingEvent.connection.name}")
+    log.info(s"---------------> Received tracking event : ${trackingEvent.connection.name}")
     trackingEvent match {
       case LocationUpdated(location) =>
         val hcd = new CommandService(location.asInstanceOf[AkkaLocation])(ctx.system)
         workerActor.commandSender ! CommandForHcd(hcd)
-      case LocationRemoved(_) => log.info("HCD no longer available")
+      case LocationRemoved(_) => log.info("---------------> HCD no longer available")
     }
   }
 

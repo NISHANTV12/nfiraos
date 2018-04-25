@@ -42,8 +42,8 @@ class NfiraosHcdHandlers(
   private var hcdConfig: String             = _
 
   //initialize
-  override def initialize(): Future[Unit] = async {
-    println("[HCD] Initializing ...")
+  override def initialize(): Future[Unit] = Future {
+    log.info("---------------> Initializing ...")
     //    import java.nio.file.Paths
     //    import csw.services.config.client.scaladsl.ConfigClientFactory
     //    val configClientService = ConfigClientFactory.clientApi(ctx.system.toUntyped, locationService)
@@ -57,19 +57,16 @@ class NfiraosHcdHandlers(
   }
 
   override def onLocationTrackingEvent(trackingEvent: TrackingEvent): Unit = {
-    log.info(s"TrackingEvent received: ${trackingEvent.connection.name}")
+    log.info(s"---------------> TrackingEvent received: ${trackingEvent.connection.name}")
   }
 
   override def onShutdown(): Future[Unit] = Future {
-    log.info("[HCD] Shutting down...")
-    println("[HCD] Shutting down...")
-    println()
+    log.info("---------------> Shutting down...")
   }
 
   //validate
   override def validateCommand(controlCommand: ControlCommand): CommandResponse = {
-    log.info(s"[HCD] Validating received command: ${controlCommand.commandName}")
-    println(s"[HCD] Validating received command: ${controlCommand.commandName}")
+    log.info(s"---------------> Validating received command: ${controlCommand.commandName}")
     controlCommand.commandName.name match {
       case "sleep" => CommandResponse.Accepted(controlCommand.runId)
       case x       => CommandResponse.Invalid(controlCommand.runId, CommandIssue.UnsupportedCommandIssue(s"Command $x. not supported."))
@@ -78,8 +75,7 @@ class NfiraosHcdHandlers(
 
   //onSubmit
   override def onSubmit(controlCommand: ControlCommand): Unit = {
-    log.info(s"[HCD] Received command: ${controlCommand.commandName}")
-    println(s"[HCD] Received command: ${controlCommand.commandName}")
+    log.info(s"---------------> Received command: ${controlCommand.commandName}")
 
     controlCommand match {
       case setupCommand: Setup     => onSetup(setupCommand)
@@ -87,7 +83,7 @@ class NfiraosHcdHandlers(
     }
   }
 
-  def onSetup(setup: Setup): Unit = {
+  private def onSetup(setup: Setup): Unit = {
     val sleepTimeKey: Key[Long] = KeyType.LongKey.make("SleepTime")
 
     // get param from the Parameter Set in the Setup
@@ -96,7 +92,7 @@ class NfiraosHcdHandlers(
     // values of parameters are arrays. Get the first one (the only one in our case) using `head` method available as a convenience method on `Parameter`.
     val sleepTimeInMillis: Long = sleepTimeParam.head
 
-    log.info(s"command payload: ${sleepTimeParam.keyName} = $sleepTimeInMillis")
+    log.info(s"---------------> command payload: ${sleepTimeParam.keyName} = $sleepTimeInMillis")
 
     workerActor.actor ! Sleep(setup.runId, sleepTimeInMillis)
   }
